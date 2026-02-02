@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="card">
+     <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2 style = "margin:0; ">{{ ticker_value }} Information</h2>
+        <a style="margin-top:0;" href="https://finance.yahoo.com/quote/{{ticker_value}}?p{{ticker_value}}">Show More</a>
+    </div>
+
+    <div>
+        <table class="info-table">
+            <tbody>
+                <tr>
+                    <td>Symbol</td>
+                    <td>{{ Symbol }}</td>
+                </tr>
+                <tr>
+                    <td>Name</td>
+                    <td>{{ Name }}</td>
+                </tr>
+                <tr>
+                    <td>Net Change</td>
+                    <td>{{ Net_Change }}</td>
+                </tr>
+                <tr>
+                    <td>Percent Change</td>
+                    <td>{{ Percent_Change }}</td>
+                </tr>
+                <tr>
+                    <td>Market Cap</td>
+                    <td>{{ Market_Cap }}</td>
+                </tr>
+                <tr>
+                    <td>Country</td>
+                    <td>{{ Country }}</td>
+                </tr>
+                <tr>
+                    <td>IPO Year</td>
+                    <td>{{ IPO_Year }}</td>
+                </tr>
+                <tr>
+                    <td>Volume</td>
+                    <td>{{ Volume }}</td>
+                </tr>
+                <tr>
+                    <td>Sector</td>
+                    <td>{{ Sector }}</td>
+                </tr>
+                <tr>
+                    <td>Industry</td>
+                    <td>{{ Industry }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="grid-2">
+        <div class="card">
+            <h3>Live Price</h3>
+            <div class="plot">
+              {{ plot_div|safe }}
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Prediction</h3>
+            <div class="plot">
+              {{ plot_div_pred|safe }}
+        </div>
+     </div>
+</div>
+
+<div class="card">
+  <h3>Predicted Values</h3>
+  <ul>
+    {% for val in forecast %}
+      <li>$ {{ val }}</li>
+    {% endfor %}
+  </ul>
+</div>
+
+{% endblock %}
+

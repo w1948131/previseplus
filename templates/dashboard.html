@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div class="card">
+    <h1 class="h1">Dashboard</h1>
+    <p class="muted">Active Stocks</p>
+  </div>
+
+  <div class="card">
+    <h2 class="h1">Monthly Active Stocks</h2>
+
+    <div class="plot">
+      {{ plot_div_left|safe }}
+    </div>
+  </div>
+{% endblock %}
