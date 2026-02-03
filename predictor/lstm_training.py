@@ -11,15 +11,15 @@ LOOKBACK = 60
 EPOCHS = 10
 BATCH_SIZE = 32
 
-# 1) Download 5y data
+#  5y testng data
 df = yf.download(TICKER, period="5y", interval="1d")
 close = df[["Close"]].dropna().values
 
-# 2) Scale
+# model scaling
 scaler = MinMaxScaler()
 scaled = scaler.fit_transform(close)
 
-# 3) Make sequences
+# Sequences
 X, y = [], []
 for i in range(LOOKBACK, len(scaled)):
     X.append(scaled[i-LOOKBACK:i])
@@ -28,7 +28,7 @@ for i in range(LOOKBACK, len(scaled)):
 X = np.array(X).reshape(-1, LOOKBACK, 1)
 y = np.array(y)
 
-# 4) Build model
+# Build of model
 model = Sequential([
     LSTM(50, return_sequences=True, input_shape=(LOOKBACK, 1)),
     Dropout(0.2),
@@ -38,10 +38,10 @@ model = Sequential([
 ])
 model.compile(optimizer="adam", loss="mse")
 
-# 5) Train ONCE
+# model training
 model.fit(X, y, epochs=EPOCHS, batch_size=BATCH_SIZE)
 
-# 6) Save model + scaler
+# Save model + scaler. 
 os.makedirs("backend/predictor/saved", exist_ok=True)
 model.save("backend/predictor/saved/sp500_lstm.keras")
 

@@ -24,7 +24,7 @@ def search(request):
 @login_required
 def dashboard(request):
    
-    # download 1 month daily data for these tickers
+    # download daily data for these tickers
     data = yf.download(
         tickers = ["AAPL", "AMZN", "NVDA", "META", "MSFT", "JPM"],
         
@@ -100,15 +100,21 @@ def predict(request, ticker_value, number_of_days):
         return render(request, "Invalid_Ticker.html", {})
     
     
-   # ---------------- live stock data  ----------------
+   # - live stock data  --
     try:
-        df = yf.download(tickers=ticker_value, period="5d", interval="5m")
+        df = yf.download(tickers=ticker_value, period="1d", interval="1m", prepost=True, progress=False)
         if df is None or df.empty:
             return render(request, "Invalid_Ticker.html", {})
     except:
         return render(request, "API_Down.html", {})
+    
+    latest_day = df.index.max().date()
+    df = df[df.index.date == latest_day]
+    
+    if df.empty:
+        return render(request, "Invalid_Ticker.html", {})
 
-    # ---------------- Live candlestick graph ----------------
+    # -- Live candlestick graph -
     fig = go.Figure()
     fig.add_trace(go.Candlestick(
         x=df.index,
@@ -127,7 +133,7 @@ def predict(request, ticker_value, number_of_days):
     )
     plot_div = plot(fig, auto_open=False, output_type="div", include_plotlyjs=False)
 
-    # ---------------- Load ticker info table ----------------
+    # -Load ticker info table -
     info_df = pd.read_csv("predictor/Data/Tickers.csv")
     info_df = info_df.drop(columns=["Last Sale"]) # dont need as info is not split from csv
     info_df.columns = ["Symbol", "Name", "Net_Change", "Percent_Change", "Market_Cap",

@@ -66,7 +66,7 @@ def predict_next_days(ticker: str, days: int):
     ticker = ticker.upper().strip()
     model_path, scaler_path = _paths(ticker)
 
-    # download close prices for THIS ticker
+    # downloads close prices for THIS ticker
     df = yf.download(ticker, period="5y", interval="1d")[["Close"]].dropna()
     if df is None or df.empty or len(df) < LOOKBACK + 10:
         raise ValueError("Not enough data for this ticker.")
