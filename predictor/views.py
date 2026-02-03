@@ -4,6 +4,7 @@ from .lstm_prediction import predict_next_days
 from plotly.offline import plot
 import plotly.graph_objects as go 
 import pandas as pd
+import numpy as np 
 import datetime as dt  
 import yfinance as yf
 import json
@@ -68,6 +69,7 @@ def dashboard(request):
 
     return render(request, "dashboard.html", {
         "plot_div_left": plot_div_left,
+        
     })
 
 # renders ticker list
@@ -83,6 +85,7 @@ def ticker(request):
 def predict(request, ticker_value, number_of_days):
     
     try:
+        ticker_value=ticker_value.upper().strip()
         number_of_days = int(number_of_days)
     except:
         return render(request, "Invalid_Days_Format.html", {})
@@ -98,40 +101,34 @@ def predict(request, ticker_value, number_of_days):
     
     if ticker_value not in valid_set:
         return render(request, "Invalid_Ticker.html", {})
+  
+    data = yf.download(
+        
+        ticker_value,
+        period="3mo",
+        interval="1d",
+        threads=True
+    )
     
-    
-   # - live stock data  --
-    try:
-        df = yf.download(tickers=ticker_value, period="1d", interval="1m", prepost=True, progress=False)
-        if df is None or df.empty:
-            return render(request, "Invalid_Ticker.html", {})
-    except:
-        return render(request, "API_Down.html", {})
-    
-    latest_day = df.index.max().date()
-    df = df[df.index.date == latest_day]
-    
-    if df.empty:
-        return render(request, "Invalid_Ticker.html", {})
+    if isinstance(data.columns, pd.MultiIndex): # must multi style indexing for ticker graph
+        close = data["Close"][ticker_value]
+    else:
+        close = data["Close"]
 
-    # -- Live candlestick graph -
-    fig = go.Figure()
-    fig.add_trace(go.Candlestick(
-        x=df.index,
-        open=df["Open"],
-        high=df["High"],
-        low=df["Low"],
-        close=df["Close"],
-        name="market data"
-    ))
-    fig.update_layout(
-        title=f"{ticker_value} live share price evolution",
+    data = data.reset_index()
+
+    fig_left = go.Figure()
+    fig_left.add_trace(go.Scatter(x=data["Date"], y=close.values))
+
+    fig_left.update_layout(
+        title=f"{ticker_value} Recent share price evolution",
         yaxis_title="Stock Price (USD per Shares)",
         paper_bgcolor="#14151b",
         plot_bgcolor="#14151b",
         font_color="white"
     )
-    plot_div = plot(fig, auto_open=False, output_type="div", include_plotlyjs=False)
+    
+    plot_div = plot(fig_left, auto_open=False, output_type="div", include_plotlyjs="cdn")
 
     # -Load ticker info table -
     info_df = pd.read_csv("predictor/Data/Tickers.csv")
@@ -170,6 +167,29 @@ def predict(request, ticker_value, number_of_days):
         font_color="white"
     )
     plot_div_pred = plot(pred_fig, auto_open=False, output_type="div", include_plotlyjs=False)
+    
+    # Reliability score
+    
+    try: 
+        eval_days = 60 
+        
+        hist = yf.download(ticker_value, period="6mo", interval="1d", progress=False)[["Close"]].dropna()
+        
+        actual = hist["Close"].values[-eval_days:]
+        predicted = predict_next_days(ticker_value, eval_days)
+        
+        rmse = np.sqrt(np.mean((actual - predicted) ** 2))
+        mape = np.mean(np.abs((actual - predicted) / actual)) * 100
+        
+        if mape < 2:
+            relability = "High"
+        elif mape <= 5:
+            relability = "Medium"
+        else: 
+            relability = "low"
+    except:
+        rmse = mape = "N/A"
+        relability = "N/A"
 
     #  Rendering results.html 
     return render(request, "results.html", {
@@ -190,6 +210,9 @@ def predict(request, ticker_value, number_of_days):
         "Volume": Volume,
         "Sector": Sector,
         "Industry": Industry,
+        "relability": relability,
+        "rmse": round(rmse , 2) if rmse != "N/A" else rmse,
+        "mape": round(mape, 2) if mape != "N/A" else mape,
     })
         
     

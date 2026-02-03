@@ -52,8 +52,24 @@
                 </tr>
             </tbody>
         </table>
+        
     </div>
 </div>
+<div class="card">
+  <h3>Prediction Reliability</h3>
+
+  <p>
+    Reliability: <strong>{{ relability }}</strong>
+  </p>
+
+  <p class="muted">
+    Based on last 60 trading days
+  </p>
+
+  <p>RMSE: <strong>{{ rmse }}</strong></p>
+  <p>MAPE: <strong>{{ mape }}%</strong></p>
+</div>
+
 
 <div class="grid-2">
         <div class="card">
@@ -69,15 +85,6 @@
               {{ plot_div_pred|safe }}
         </div>
      </div>
-</div>
-
-<div class="card">
-  <h3>Predicted Values</h3>
-  <ul>
-    {% for val in forecast %}
-      <li>$ {{ val }}</li>
-    {% endfor %}
-  </ul>
 </div>
 
 {% endblock %}

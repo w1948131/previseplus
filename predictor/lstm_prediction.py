@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import yfinance as yf
 
+from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import LSTM, Dense
