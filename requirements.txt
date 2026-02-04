@@ -18,7 +18,7 @@ kiwisolver==1.4.9
 matplotlib==3.10.8
 multitasking==0.0.12
 narwhals==2.15.0
-numpy==2.4.1
+numpy==1.26.4
 packaging==26.0
 pandas==3.0.0
 peewee==3.19.0
