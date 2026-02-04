@@ -56,17 +56,25 @@
     </div>
 </div>
 <div class="card">
-  <h3>Prediction Reliability</h3>
+    <div style="display:flex; justify-content:space-between; align-items:flex-start;" >
+        <h3 style = "margin:0; ">Prediction Reliability</h3>
+        <div>
+            <h3 style="margin:0 0 6px;"><u>How to use this Score</u></h3>
+        </div>
+    </div>
 
-  <p>
-    Reliability: <strong>{{ relability }}</strong>
-  </p>
-
-  <p class="muted">
-    Based on last 60 trading days
-  </p>
-
-  <p>RMSE: <strong>{{ rmse }}</strong></p>
+    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <p>Reliability: <strong>{{ relability }}</strong> </p>
+        <p><b>High:</b> Prediction is accurate to recent trends</p>
+    </div>
+    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+       <p class="muted">Based on last 60 trading days</p>
+        <p><b>Medium:</b> Prediction is moderatly reliable</p>
+    </div>
+    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+       <p>RMSE: <strong>{{ rmse }}</strong></p>
+        <p><b>Low:</b> High volatility -- Prediction is uncertain</p>
+    </div>
   <p>MAPE: <strong>{{ mape }}%</strong></p>
 </div>
 
