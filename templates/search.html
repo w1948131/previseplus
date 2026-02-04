@@ -2,7 +2,7 @@
 {% block content %}
 
 <div class="card">
-  <h2>Predict Stock</h2>
+  <h2>Stock Price Predictor</h2>
 
   <form method="post">
     {% csrf_token %}
@@ -16,7 +16,9 @@
       <div>
         <label>Days (1-365)</label>
         <input type="number" name="days" min="1" max="365" value="7" required>
+        <a href="/tickers">Search for Stock Tickers</a>
       </div>
+
 
       <button class="btn btn-primary" type="submit">Predict</button>
     </div>
