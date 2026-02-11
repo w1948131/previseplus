@@ -13,6 +13,7 @@ import json
 def home(request):
     return render(request, "home.html")
 
+#ticker search
 def search(request):
     if request.method == "POST":
         ticker = request.POST.get("ticker")
@@ -25,7 +26,7 @@ def search(request):
 @login_required
 def dashboard(request):
    
-    # download daily data for these tickers
+    # pull stock info from yfinance ---- Future goal: pull most popular instead
     data = yf.download(
         tickers = ["AAPL", "AMZN", "NVDA", "META", "MSFT", "JPM"],
         
@@ -57,6 +58,7 @@ def dashboard(request):
         go.Scatter(x=data['Date'], y=data['JPM']['Close'], name ="JPM")
     )
     
+    #dashboard plot style
     fig_left.update_layout(
         title = "Monthly Active Stocks",
         paper_bgcolor="#14151b",
@@ -64,7 +66,7 @@ def dashboard(request):
         font_color="white"
     )
     
-
+    #plot to html
     plot_div_left = plot(fig_left, auto_open=False, output_type="div", include_plotlyjs="cdn")
 
     return render(request, "dashboard.html", {
@@ -72,37 +74,39 @@ def dashboard(request):
         
     })
 
-# renders ticker list
+# renders list of tickers
 def ticker(request):
     ticker_df = pd.read_csv("predictor/Data/new_tickers.csv")
     json_ticker = ticker_df.reset_index().to_json(orient="records")
-    ticker_list = json.loads(json_ticker)
+    ticker_list = json.loads(json_ticker) #made into list so it can be looped
     
     return render(request, "ticker.html", {
         "ticker_list": ticker_list,
     })
     
+    
+#prediciton from stock search    
 def predict(request, ticker_value, number_of_days):
     
     try:
         ticker_value=ticker_value.upper().strip()
-        number_of_days = int(number_of_days)
+        number_of_days = int(number_of_days) #validates days format
     except:
-        return render(request, "Invalid_Days_Format.html", {})
+        return render(request, "Invalid_Days_Format.html", {})  #not added yet
     
     if number_of_days < 0:
-        return render(request, "Negative_Days.html", {})
+        return render(request, "Negative_Days.html", {}) #not added yet
     if number_of_days > 365:
-        return render(request, "Overflow_days.html", {})
+        return render(request, "Overflow_days.html", {}) # not added yet
     
-    valid_df = pd.read_csv("predictor/Data/new_tickers.csv")
-    col = "Symbol" if "Symbol" in valid_df.columns else valid_df.columns[0]
+    valid_df = pd.read_csv("predictor/Data/new_tickers.csv") #ticker validation
+    col = "Symbol" if "Symbol" in valid_df.columns else valid_df.columns[0] #checks ticker symbol
     valid_set = set(valid_df[col].astype(str).str.upper())
     
     if ticker_value not in valid_set:
-        return render(request, "Invalid_Ticker.html", {})
+        return render(request, "Invalid_Ticker.html", {}) # not added yet
   
-    data = yf.download(
+    data = yf.download( #3month chart action
         
         ticker_value,
         period="3mo",
@@ -119,7 +123,7 @@ def predict(request, ticker_value, number_of_days):
 
     fig_left = go.Figure()
     fig_left.add_trace(go.Scatter(x=data["Date"], y=close.values))
-
+    #recent price action of stock graph
     fig_left.update_layout(
         title=f"{ticker_value} Recent share price evolution",
         yaxis_title="Stock Price (USD per Shares)",
@@ -130,7 +134,7 @@ def predict(request, ticker_value, number_of_days):
     
     plot_div = plot(fig_left, auto_open=False, output_type="div", include_plotlyjs="cdn")
 
-    # -Load ticker info table -
+    # loads relevant ticker table 
     info_df = pd.read_csv("predictor/Data/Tickers.csv")
     info_df = info_df.drop(columns=["Last Sale"]) # dont need as info is not split from csv
     info_df.columns = ["Symbol", "Name", "Net_Change", "Percent_Change", "Market_Cap",
@@ -153,12 +157,12 @@ def predict(request, ticker_value, number_of_days):
         Sector = row["Sector"]
         Industry = row["Industry"]
 
-    # Prediction + prediction graph 
     
+    # LSTM prediction and graph creation
     forecast = predict_next_days(ticker_value, number_of_days)  
     confidence = "Trained LSTM Model"
 
-    pred_dates = [dt.datetime.today() + dt.timedelta(days=i) for i in range(len(forecast))]
+    pred_dates = [dt.datetime.today() + dt.timedelta(days=i) for i in range(len(forecast))] # future dates creation
     pred_fig = go.Figure([go.Scatter(x=pred_dates, y=forecast)])
     pred_fig.update_layout(
         title=f"Predicted Stock price of {ticker_value} for next {number_of_days} days",
@@ -168,19 +172,20 @@ def predict(request, ticker_value, number_of_days):
     )
     plot_div_pred = plot(pred_fig, auto_open=False, output_type="div", include_plotlyjs=False)
     
-    # Reliability score
     
+    # Evaluation metrics to reliability score
     try: 
         eval_days = 60 
         
         hist = yf.download(ticker_value, period="6mo", interval="1d", progress=False)[["Close"]].dropna()
         
-        actual = hist["Close"].values[-eval_days:]
-        predicted = predict_next_days(ticker_value, eval_days)
+        actual = hist["Close"].values[-eval_days:] # actual close prices
+        predicted = predict_next_days(ticker_value, eval_days) # prediction close prices
         
-        rmse = np.sqrt(np.mean((actual - predicted) ** 2))
-        mape = np.mean(np.abs((actual - predicted) / actual)) * 100
+        rmse = np.sqrt(np.mean((actual - predicted) ** 2)) # average prediction error mainly for professional traders
+        mape = np.mean(np.abs((actual - predicted) / actual)) * 100 #average percentage error
         
+        # easy translation of MAPE for amateur traders
         if mape < 2:
             relability = "High"
         elif mape <= 5:
@@ -199,7 +204,7 @@ def predict(request, ticker_value, number_of_days):
         "forecast": forecast,
         "ticker_value": ticker_value,
         "number_of_days": number_of_days,
-
+    #ticker table  
         "Symbol": Symbol,
         "Name": Name,
         "Net_Change": Net_Change,
