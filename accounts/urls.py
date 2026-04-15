@@ -7,5 +7,5 @@ urlpatterns = [
     path("register/", register, name="register"),
     path("login/", CustomLoginView.as_view(), name="login"), #renders custom login page, see views.py
     path("logout/", logout_view, name="logout"),
-    path("accounts/profile/", lambda request: redirect("/dashboard/")), # meant for profile feature, not implemented yet 
+    path("accounts/profile/", lambda request: redirect("/dashboard/")), # meant for profile feature, login redirect 
 ]

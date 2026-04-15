@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from .lstm_prediction import predict_next_days
+from .lstm_prediction import predict_next_days, backtest, prophet_forecast
 from plotly.offline import plot
 import plotly.graph_objects as go 
 import pandas as pd
@@ -20,13 +20,39 @@ def search(request):
         days = request.POST.get("days")
         return redirect("predict", ticker_value=ticker, number_of_days=days)
 
-    return render(request, "search.html")
+    #return render(request, "search.html")
+    
+    # Stock mapping for prediction page
+    try:
+        df = pd.read_csv("predictor/Data/Tickers.csv")
+        valid_df = pd.read_csv("predictor/Data/new_tickers.csv")
+        valid_set = set(valid_df["Symbol"].astype(str).str.upper())
+        df = df[df["Symbol"].astype(str).str.upper().isin(valid_set)]
+        df = df[df["Sector"].notna()]
+        
+        sectors = {}
+        for _, row in df.iterrows():
+            s = row["Sector"]
+            if s not in sectors:
+                sectors[s] = []
+            sectors[s].append({
+                "symbol": str(row["Symbol"]).upper(),
+                "name": str(row["Name"]).strip(),
+            })
+        for s in sectors:
+            sectors[s] = sorted(sectors[s], key=lambda x: x["symbol"])
+        sectors = dict(sorted(sectors.items()))
+    except Exception:
+        sectors = {}
+ 
+    return render(request, "search.html", {"sectors": json.dumps(sectors)})
+        
 
 
 @login_required
 def dashboard(request):
    
-    # pull stock info from yfinance ---- Future goal: pull most popular instead
+    # pull stock info from yfinance,  Future goal: pull most popular instead
     data = yf.download(
         tickers = ["AAPL", "AMZN", "NVDA", "META", "MSFT", "JPM"],
         
@@ -159,48 +185,72 @@ def predict(request, ticker_value, number_of_days):
 
     
     # LSTM prediction and graph creation
-    forecast = predict_next_days(ticker_value, number_of_days)  
-    confidence = "Trained LSTM Model"
-
-    pred_dates = [dt.datetime.today() + dt.timedelta(days=i) for i in range(len(forecast))] # future dates creation
-    pred_fig = go.Figure([go.Scatter(x=pred_dates, y=forecast)])
-    pred_fig.update_layout(
-        title=f"Predicted Stock price of {ticker_value} for next {number_of_days} days",
-        paper_bgcolor="#14151b",
-        plot_bgcolor="#14151b",
-        font_color="white"
-    )
-    plot_div_pred = plot(pred_fig, auto_open=False, output_type="div", include_plotlyjs=False)
+    #forecast = predict_next_days(ticker_value, number_of_days)  
+    #confidence = "Trained LSTM Model"
+    
+   
+    try:
+        forecast = predict_next_days(ticker_value, number_of_days)
+        pred_dates = [dt.datetime.today() + dt.timedelta(days=i) for i in range(len(forecast))] # future dates creation
+        pred_fig = go.Figure([go.Scatter(x=pred_dates, y=forecast)])
+        pred_fig.update_layout(
+            title=f"Predicted Stock price of {ticker_value} for next {number_of_days} days",
+            paper_bgcolor="#14151b",
+            plot_bgcolor="#14151b",
+            font_color="white"
+        )
+        plot_div_pred = plot(pred_fig, auto_open=False, output_type="div", include_plotlyjs=False)
+    except ValueError as e:
+        return redirect(f"/search?error={ticker_value}")
+    
+    
+    #long term forecast
+    try:
+        pf = prophet_forecast(ticker_value, number_of_days)
+        
+        if pf and forecast:
+            offset = forecast[0] - pf["values"][0]
+            pf["values"] = [round(v + offset, 2) for v in pf["values"]]
+            pf["upper"]  = [round(v + offset, 2) for v in pf["upper"]]
+            pf["lower"]  = [round(v + offset, 2) for v in pf["lower"]]
+            
+    except Exception:
+        pf = None
     
     
     # Evaluation metrics to reliability score
     try: 
-        eval_days = 60 
+        bt = backtest(ticker_value, eval_days=60)
         
-        hist = yf.download(ticker_value, period="6mo", interval="1d", progress=False)[["Close"]].dropna()
+        bt_fig = go.Figure()
+        bt_fig.add_trace(go.Scatter(x=bt["dates"], y=bt["actual"], name="Actual", line=dict(color="#4fc3f7")))
+        bt_fig.add_trace(go.Scatter(x=bt["dates"], y=bt["predicted"], name="Predicted", line=dict(color="#ff3b3b", dash="dash")))
+        bt_fig.update_layout(
+            title=f"{ticker_value} Backtest: Last 60 Trading Days",
+            yaxis_title="Price ($ USD)",
+            paper_bgcolor="#14151b",
+            plot_bgcolor="#14151b",
+            font_color="white",
+            legend=dict(bgcolor="rgba(0,0,0,0)"),
+        )
+        plot_div_backtest =  plot(bt_fig, auto_open=False, output_type="div", include_plotlyjs=False)
         
-        actual = hist["Close"].values[-eval_days:] # actual close prices
-        predicted = predict_next_days(ticker_value, eval_days) # prediction close prices
-        
-        rmse = np.sqrt(np.mean((actual - predicted) ** 2)) # average prediction error mainly for professional traders
-        mape = np.mean(np.abs((actual - predicted) / actual)) * 100 #average percentage error
-        
-        # easy translation of MAPE for amateur traders
-        if mape < 2:
-            relability = "High"
-        elif mape <= 5:
-            relability = "Medium"
-        else: 
-            relability = "low"
-    except:
+        relability = bt["reliability"]
+        rmse = bt["rmse"]
+        mape = bt["mape"]
+  
+    except Exception:
+        plot_div_backtest = None
         rmse = mape = "N/A"
         relability = "N/A"
+             
 
     #  Rendering results.html 
     return render(request, "results.html", {
         "plot_div": plot_div,
         "plot_div_pred": plot_div_pred,
-        "confidence": confidence,
+        "plot_div_backtest": plot_div_backtest,
+        "pf": pf,
         "forecast": forecast,
         "ticker_value": ticker_value,
         "number_of_days": number_of_days,
