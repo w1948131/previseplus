@@ -80,8 +80,8 @@ def _build_features(ticker: str) -> pd.DataFrame:
 # LSTM model architecture - now takes multiple features as input
 def _build_model(n_features: int):
     model = Sequential([
-        LSTM(64, return_sequences=True, input_shape=(LOOKBACK, n_features)),  # LSTM layer identifies patterns
-        LSTM(64),  # refines features
+        LSTM(128, return_sequences=True, input_shape=(LOOKBACK, n_features)),  # LSTM layer identifies patterns
+        LSTM(128),  # refines features
         Dense(1)   # output layer predicts next close price
     ])
     model.compile(optimizer="adam", loss="mse")
@@ -121,7 +121,7 @@ def _load_or_train(ticker: str):
 
         model = _build_model(n_features)
         es = EarlyStopping(monitor="loss", patience=3, restore_best_weights=True)
-        model.fit(X, y, epochs=10, batch_size=32, verbose=0, callbacks=[es])
+        model.fit(X, y, epochs=50, batch_size=32, verbose=0, callbacks=[es])
 
         model.save(model_path)
         _save_scaler(scaler, scaler_path)
