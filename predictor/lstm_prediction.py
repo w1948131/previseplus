@@ -129,33 +129,49 @@ def _load_or_train(ticker: str):
     return model, scaler, values, df.index
 
 
-# Rolls the model forward from a given scaled window for `days` steps
-# Only the close price (index 0) is predicted; other features are held at last known values
+# Rolls the model forward from a given window for `days` steps
+# Technical indicators are recalculated dynamically as new prices are predicted
 def _forecast_from_window(model, scaler, window_scaled: np.ndarray, days: int):
     n_features = window_scaled.shape[1]
-    window = window_scaled[-LOOKBACK:].reshape(1, LOOKBACK, n_features)
+    
+    # inverse transform the window to get real prices for indicator recalculation
+    window_real = scaler.inverse_transform(window_scaled[-LOOKBACK:])
+    close_history = list(window_real[:, 0])  # track real close prices
+    volume_last = window_real[-1, 4]         # hold volume at last known value
 
-    future_scaled = []
-    last_row = window_scaled[-1].copy()  # holds last known values of all features
+    future_real = []
 
     for _ in range(days):
-        next_close_scaled = model.predict(window, verbose=0)[0][0]  # predict next close
+        # scale current window for model input
+        window_scaled_current = scaler.transform(np.array(window_real))
+        model_input = window_scaled_current[-LOOKBACK:].reshape(1, LOOKBACK, n_features)
 
-        # build next row: update close price, keep other features at last known values
-        next_row = last_row.copy()
-        next_row[0] = next_close_scaled  # index 0 is Close
-        future_scaled.append(next_row)
-        last_row = next_row
+        # predict next close price
+        next_close_scaled = model.predict(model_input, verbose=0)[0][0]
 
-        # slide window forward
-        window = np.append(window[0, 1:, :], [next_row], axis=0).reshape(1, LOOKBACK, n_features)
+        # inverse transform to get real close price
+        dummy_row = window_real[-1].copy()
+        dummy_row[0] = next_close_scaled
+        next_close_real = scaler.inverse_transform(
+            scaler.transform(np.array([dummy_row]))
+        )[0][0]
 
-    # inverse transform to get real prices - only need close price (column 0)
-    future_arr = np.array(future_scaled)  # shape (days, n_features)
-    future_full = scaler.inverse_transform(future_arr)
-    future_close = future_full[:, 0]  # extract close price column
+        # recalculate technical indicators from updated close history
+        close_history.append(next_close_real)
+        close_series = pd.Series(close_history)
 
-    return [round(float(v), 2) for v in future_close]
+        ma20 = close_series.rolling(window=20).mean().iloc[-1]
+        ma50 = close_series.rolling(window=50).mean().iloc[-1]
+        rsi  = _compute_rsi(close_series).iloc[-1]
+
+        # build next real row with updated indicators
+        next_row_real = np.array([next_close_real, ma20, ma50, rsi, volume_last])
+        future_real.append(next_close_real)
+
+        # slide window forward with new real row
+        window_real = np.vstack([window_real[1:], next_row_real])
+
+    return [round(float(v), 2) for v in future_real]
 
 
 # predicts future closing prices from today
