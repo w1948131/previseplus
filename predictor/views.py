@@ -59,7 +59,8 @@ def dashboard(request):
         group_by="ticker",
         period="1mo",
         interval="1d",
-        threads=True
+        threads=True,
+        timeout=30
     )
 
     data.reset_index(level=0, inplace=True)
@@ -137,7 +138,8 @@ def predict(request, ticker_value, number_of_days):
         ticker_value,
         period="3mo",
         interval="1d",
-        threads=True
+        threads=True,
+        timeout=30
     )
     
     if isinstance(data.columns, pd.MultiIndex): # must multi style indexing for ticker graph
