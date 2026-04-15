@@ -10,7 +10,12 @@
     <h2 class="h1">Monthly Active Stocks</h2>
 
     <div class="plot">
-      {{ plot_div_left|safe }}
+      {% if plot_div_left %}
+
+        {{ plot_div_left|safe }}
+      {% else %}
+        <p class="muted">Market data is unable to load</p>
+      {% endif %}
     </div>
   </div>
 {% endblock %}

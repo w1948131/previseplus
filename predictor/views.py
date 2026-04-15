@@ -51,51 +51,54 @@ def search(request):
 
 @login_required
 def dashboard(request):
-   
-    # pull stock info from yfinance,  Future goal: pull most popular instead
-    data = yf.download(
-        tickers = ["AAPL", "AMZN", "NVDA", "META", "MSFT", "JPM"],
+    try: 
+        # pull stock info from yfinance,  Future goal: pull most popular instead
+        data = yf.download(
+            tickers = ["AAPL", "AMZN", "NVDA", "META", "MSFT", "JPM"],
         
-        group_by="ticker",
-        period="1mo",
-        interval="1d",
-        threads=True,
-        timeout=30
-    )
+            group_by="ticker",
+            period="1mo",
+            interval="1d",
+            threads=True,
+            timeout=30
+        )
 
-    data.reset_index(level=0, inplace=True)
+        data.reset_index(level=0, inplace=True)
 
-    fig_left = go.Figure()
-    fig_left.add_trace(
-        go.Scatter(x=data['Date'], y=data['AAPL']['Close'], name ="AAPL")
-    )
-    fig_left.add_trace(
-        go.Scatter(x=data['Date'], y=data['AMZN']['Close'], name ="AMZN")
-    )
-    fig_left.add_trace(
-        go.Scatter(x=data['Date'], y=data['NVDA']['Close'], name ="NVDA")
-    )
-    fig_left.add_trace(
-        go.Scatter(x=data['Date'], y=data['META']['Close'], name ="META")
-    )
-    fig_left.add_trace(
-        go.Scatter(x=data['Date'], y=data['MSFT']['Close'], name ="MSFT")
-    )
-    fig_left.add_trace(
-        go.Scatter(x=data['Date'], y=data['JPM']['Close'], name ="JPM")
-    )
+        fig_left = go.Figure()
+        fig_left.add_trace(
+            go.Scatter(x=data['Date'], y=data['AAPL']['Close'], name ="AAPL")
+        )
+        fig_left.add_trace(
+            go.Scatter(x=data['Date'], y=data['AMZN']['Close'], name ="AMZN")
+        )
+        fig_left.add_trace(
+            go.Scatter(x=data['Date'], y=data['NVDA']['Close'], name ="NVDA")
+        )
+        fig_left.add_trace(
+            go.Scatter(x=data['Date'], y=data['META']['Close'], name ="META")
+        )
+        fig_left.add_trace(
+            go.Scatter(x=data['Date'], y=data['MSFT']['Close'], name ="MSFT")
+        )
+        fig_left.add_trace(
+            go.Scatter(x=data['Date'], y=data['JPM']['Close'], name ="JPM")
+        )
     
-    #dashboard plot style
-    fig_left.update_layout(
-        title = "Monthly Active Stocks",
-        paper_bgcolor="#14151b",
-        plot_bgcolor="#14151b",
-        font_color="white"
-    )
+        #dashboard plot style
+        fig_left.update_layout(
+            title = "Monthly Active Stocks",
+            paper_bgcolor="#14151b",
+            plot_bgcolor="#14151b",
+            font_color="white"
+        )
     
-    #plot to html
-    plot_div_left = plot(fig_left, auto_open=False, output_type="div", include_plotlyjs="cdn")
-
+        #plot to html
+        plot_div_left = plot(fig_left, auto_open=False, output_type="div", include_plotlyjs="cdn")
+        
+    except Exception:
+        plot_div_left = None
+    
     return render(request, "dashboard.html", {
         "plot_div_left": plot_div_left,
         
