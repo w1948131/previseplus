@@ -248,4 +248,49 @@ def prophet_forecast(ticker: str, days: int):
     }
     
     
+# News sentiment analysis using VADER and NewsAPI
+# Fetches recent headlines and scores sentiment for a given ticker
+def get_sentiment(ticker: str, company_name: str = ""):
+    import requests
+    from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
+    api_key = os.environ.get("NEWS_API_KEY", "d2379e2cdfba413091dbebe97a224f00")
+
+    # use company name if provided, otherwise use ticker
+    query = company_name if company_name else ticker
+    url = (
+        f"https://newsapi.org/v2/everything?"
+        f"q={query}&language=en&sortBy=publishedAt&pageSize=10&apiKey={api_key}"
+    )
+
+    try:
+        response = requests.get(url, timeout=10)
+        articles = response.json().get("articles", [])
+        headlines = [a["title"] for a in articles if a.get("title")][:5]
+    except Exception:
+        return {"score": "N/A", "label": "N/A", "headlines": []}
+
+    if not headlines:
+        return {"score": "N/A", "label": "N/A", "headlines": []}
+
+    # score each headline using VADER
+    analyzer = SentimentIntensityAnalyzer()
+    scores = []
+    for headline in headlines:
+        score = analyzer.polarity_scores(headline)
+        scores.append(score["compound"])  # compound score between -1 and 1
+
+    avg_score = round(sum(scores) / len(scores), 4)
+
+    if avg_score > 0.05:
+        label = "Positive"
+    elif avg_score < -0.05:
+        label = "Negative"
+    else:
+        label = "Neutral"
+
+    return {
+        "score":     avg_score,
+        "label":     label,
+        "headlines": headlines,
+    }

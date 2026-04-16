@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from .lstm_prediction import predict_next_days, backtest, prophet_forecast
+from .lstm_prediction import predict_next_days, backtest, prophet_forecast, get_sentiment
 from plotly.offline import plot
 import plotly.graph_objects as go 
 import pandas as pd
@@ -221,7 +221,13 @@ def predict(request, ticker_value, number_of_days):
             
     except Exception:
         pf = None
-    
+        
+        
+    # news sentiment analysis
+    try:
+        sentiment = get_sentiment(ticker_value, Name if Name != "N/A" else ticker_value)
+    except Exception:
+        sentiment = {"score": "N/A", "label": "N/A", "headlines": []}
     
     # Evaluation metrics to reliability score
     try: 
@@ -259,6 +265,7 @@ def predict(request, ticker_value, number_of_days):
         "forecast": forecast,
         "ticker_value": ticker_value,
         "number_of_days": number_of_days,
+        "sentiment": sentiment,
     #ticker table  
         "Symbol": Symbol,
         "Name": Name,
