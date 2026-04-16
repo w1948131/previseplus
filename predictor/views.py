@@ -228,6 +228,17 @@ def predict(request, ticker_value, number_of_days):
         sentiment = get_sentiment(ticker_value, Name if Name != "N/A" else ticker_value)
     except Exception:
         sentiment = {"score": "N/A", "label": "N/A", "headlines": []}
+        
+        
+    # adjust forecast based on news sentiment score
+    if sentiment and sentiment["score"] != "N/A":
+        sentiment_adjustment = 1 + (sentiment["score"] * 0.02)
+        forecast = [round(p * sentiment_adjustment, 2) for p in forecast]
+
+    # ensemble: average LSTM and Prophet to reduce compounding error
+    if pf:
+        forecast = [round((l + p) / 2, 2) for l, p in zip(forecast, pf["values"])]
+        
     
     # Evaluation metrics to reliability score
     try: 
