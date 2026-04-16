@@ -55,6 +55,36 @@
     </div>
 </div>
 
+<div class="card" style="margin-top: 18px;">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="margin:0;">News Sentiment</h3>
+        <span style="
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 14px;
+            background: {% if sentiment.label == 'Positive' %}rgba(39,174,96,0.15){% elif sentiment.label == 'Negative' %}rgba(255,59,59,0.15){% else %}rgba(169,176,192,0.15){% endif %};
+            color: {% if sentiment.label == 'Positive' %}#27ae60{% elif sentiment.label == 'Negative' %}#ff3b3b{% else %}#a9b0c0{% endif %};
+        ">
+            {{ sentiment.label }}
+        </span>
+    </div>
+
+    <p class="muted" style="margin: 6px 0 12px; font-size: 13px;">
+        Based on recent news headlines. Score: <strong>{{ sentiment.score }}</strong>
+    </p>
+
+    {% if sentiment.headlines %}
+    <ul style="margin:0; padding-left: 18px;">
+        {% for headline in sentiment.headlines %}
+        <li style="margin-bottom: 6px; color: var(--text); font-size: 14px;">{{ headline }}</li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="muted">No recent headlines found.</p>
+    {% endif %}
+</div>
+
 <div class="card">
     <div style="display:flex; justify-content:space-between; align-items:flex-start;" >
         <h3 style = "margin:0; ">Prediction Reliability</h3>

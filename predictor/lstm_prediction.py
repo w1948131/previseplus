@@ -257,7 +257,7 @@ def get_sentiment(ticker: str, company_name: str = ""):
     api_key = os.environ.get("NEWS_API_KEY", "d2379e2cdfba413091dbebe97a224f00")
 
     # use company name if provided, otherwise use ticker
-    query = company_name if company_name else ticker
+    query = ticker
     url = (
         f"https://newsapi.org/v2/everything?"
         f"q={query}&language=en&sortBy=publishedAt&pageSize=10&apiKey={api_key}"
