@@ -93,7 +93,7 @@ def _make_windows(series_scaled: np.ndarray):
     X, y = [], []
     for i in range(LOOKBACK, len(series_scaled)):
         X.append(series_scaled[i - LOOKBACK:i])   # past LOOKBACK days of all features
-        y.append(series_scaled[i, 0])              # predict next close price (index 0)
+        y.append(series_scaled[i, 0])              # predict close prices 
     X = np.array(X)                                # shape (N, LOOKBACK, n_features)
     y = np.array(y).reshape(-1, 1)
     return X, y
@@ -246,3 +246,6 @@ def prophet_forecast(ticker: str, days: int):
         "upper":  [round(float(v), 2) for v in future_forecast["yhat_upper"]],
         "lower":  [round(float(v), 2) for v in future_forecast["yhat_lower"]],
     }
+    
+    
+

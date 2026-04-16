@@ -225,13 +225,13 @@ def predict(request, ticker_value, number_of_days):
     
     # Evaluation metrics to reliability score
     try: 
-        bt = backtest(ticker_value, eval_days=60)
+        bt = backtest(ticker_value, eval_days=14)
         
         bt_fig = go.Figure()
         bt_fig.add_trace(go.Scatter(x=bt["dates"], y=bt["actual"], name="Actual", line=dict(color="#4fc3f7")))
         bt_fig.add_trace(go.Scatter(x=bt["dates"], y=bt["predicted"], name="Predicted", line=dict(color="#ff3b3b", dash="dash")))
         bt_fig.update_layout(
-            title=f"{ticker_value} Backtest: Last 60 Trading Days",
+            title=f"{ticker_value} Backtest: Last 14 Trading Days",
             yaxis_title="Price ($ USD)",
             paper_bgcolor="#14151b",
             plot_bgcolor="#14151b",
