@@ -253,36 +253,63 @@ def prophet_forecast(ticker: str, days: int):
 def get_sentiment(ticker: str, company_name: str = ""):
     import requests
     from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+    from datetime import datetime, timezone
 
     api_key = os.environ.get("NEWS_API_KEY", "d2379e2cdfba413091dbebe97a224f00")
 
     # use company name if provided, otherwise use ticker
     short_name = " ".join(company_name.split()[:2]) if company_name else ticker
-    query = f"{ticker} +{short_name} "
+    query = f"{ticker} +{short_name}"
     url = (
         f"https://newsapi.org/v2/everything?"
-        f"q={query}&language=en&sortBy=publishedAt&pageSize=10&apiKey={api_key}"
+        f"q={query}&language=en&sortBy=publishedAt&pageSize=20&apiKey={api_key}"
     )
 
     try:
         response = requests.get(url, timeout=10)
         articles = response.json().get("articles", [])
-        headlines = [{"title": a["title"], "url": a.get("url", "#")} for a in articles if a.get("title")][:10]
-    
+
+        # filter to only articles mentioning ticker or company name in headline
+        keywords = [ticker.lower(), short_name.lower().split()[0]]
+        filtered = [
+            a for a in articles
+            if a.get("title") and any(k in a["title"].lower() for k in keywords)
+        ]
+
+        # use filtered if we have enough, otherwise fall back to all articles
+        articles = filtered if len(filtered) >= 3 else articles
+
+        headlines = [{"title": a["title"], "url": a.get("url", "#"), "publishedAt": a.get("publishedAt", "")} for a in articles if a.get("title")][:10]
+
     except Exception:
         return {"score": "N/A", "label": "N/A", "headlines": []}
 
     if not headlines:
         return {"score": "N/A", "label": "N/A", "headlines": []}
 
-    # score each headline using VADER
+    # score each headline using VADER with recency weighting
     analyzer = SentimentIntensityAnalyzer()
     scores = []
-    for headline in headlines:
-        score = analyzer.polarity_scores(headline["title"])
-        scores.append(score["compound"])  # compound score between -1 and 1
+    weights = []
+    now = datetime.now(timezone.utc)
 
-    avg_score = round(sum(scores) / len(scores), 4)
+    for i, headline in enumerate(headlines):
+        compound = analyzer.polarity_scores(headline["title"])["compound"]
+
+        # calculate recency weight - more recent articles get higher weight
+        try:
+            pub_date = datetime.fromisoformat(headline["publishedAt"].replace("Z", "+00:00"))
+            days_old = (now - pub_date).days
+            weight = 1 / (1 + days_old)  # articles from today get weight 1, older get less
+        except Exception:
+            weight = 0.5  # default weight if date parsing fails
+
+        scores.append(compound)
+        weights.append(weight)
+
+    # weighted average score
+    total_weight = sum(weights)
+    avg_score = round(sum(s * w for s, w in zip(scores, weights)) / total_weight, 4)
 
     if avg_score > 0.05:
         label = "Positive"
@@ -294,5 +321,5 @@ def get_sentiment(ticker: str, company_name: str = ""):
     return {
         "score":     avg_score,
         "label":     label,
-        "headlines": headlines,
+        "headlines": [{"title": h["title"], "url": h["url"], "score": round(analyzer.polarity_scores(h["title"])["compound"], 4)} for h in headlines],
     }

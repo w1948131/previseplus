@@ -144,3 +144,16 @@ input:focus{
   padding: 14px 16px;
   font-size: 15px;
 }
+
+
+/* news sentiment */
+.news-link {
+    color: var(--text);
+    text-decoration: none;
+    cursor: pointer;
+    display: inline-block;
+}
+.news-link:hover {
+    color: var(--accent);
+    text-decoration: underline;
+}
