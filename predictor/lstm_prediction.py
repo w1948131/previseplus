@@ -257,7 +257,8 @@ def get_sentiment(ticker: str, company_name: str = ""):
     api_key = os.environ.get("NEWS_API_KEY", "d2379e2cdfba413091dbebe97a224f00")
 
     # use company name if provided, otherwise use ticker
-    query = ticker
+    short_name = " ".join(company_name.split()[:2]) if company_name else ticker
+    query = f"{ticker} +{short_name} "
     url = (
         f"https://newsapi.org/v2/everything?"
         f"q={query}&language=en&sortBy=publishedAt&pageSize=10&apiKey={api_key}"
@@ -266,7 +267,8 @@ def get_sentiment(ticker: str, company_name: str = ""):
     try:
         response = requests.get(url, timeout=10)
         articles = response.json().get("articles", [])
-        headlines = [a["title"] for a in articles if a.get("title")][:5]
+        headlines = [{"title": a["title"], "url": a.get("url", "#")} for a in articles if a.get("title")][:10]
+    
     except Exception:
         return {"score": "N/A", "label": "N/A", "headlines": []}
 
@@ -277,7 +279,7 @@ def get_sentiment(ticker: str, company_name: str = ""):
     analyzer = SentimentIntensityAnalyzer()
     scores = []
     for headline in headlines:
-        score = analyzer.polarity_scores(headline)
+        score = analyzer.polarity_scores(headline["title"])
         scores.append(score["compound"])  # compound score between -1 and 1
 
     avg_score = round(sum(scores) / len(scores), 4)

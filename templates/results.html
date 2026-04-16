@@ -1,198 +1,231 @@
-{% extends "base.html" %}
-{% block content %}
+{% extends "base.html" %} {% block content %}
 
 <div class="card">
-     <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h2 style = "margin:0; ">{{ ticker_value }} Information</h2>
-        <a style="margin-top:0;" href="https://finance.yahoo.com/quote/{{ticker_value}}?p{{ticker_value}}">Show More</a>
-    </div>
+  <div
+    style="display: flex; justify-content: space-between; align-items: center"
+  >
+    <h2 style="margin: 0">{{ ticker_value }} Information</h2>
+    <a
+      style="margin-top: 0"
+      href="https://finance.yahoo.com/quote/{{ticker_value}}?p{{ticker_value}}"
+      >Show More</a
+    >
+  </div>
 
-    <div>
-        <table class="info-table">
-            <tbody>
-                <tr>
-                    <td>Symbol</td>
-                    <td>{{ Symbol }}</td>
-                </tr>
-                <tr>
-                    <td>Name</td>
-                    <td>{{ Name }}</td>
-                </tr>
-                <tr>
-                    <td>Net Change</td>
-                    <td>{{ Net_Change }}</td>
-                </tr>
-                <tr>
-                    <td>Percent Change</td>
-                    <td>{{ Percent_Change }}</td>
-                </tr>
-                <tr>
-                    <td>Market Cap</td>
-                    <td>{{ Market_Cap }}</td>
-                </tr>
-                <tr>
-                    <td>Country</td>
-                    <td>{{ Country }}</td>
-                </tr>
-                <tr>
-                    <td>IPO Year</td>
-                    <td>{{ IPO_Year }}</td>
-                </tr>
-                <tr>
-                    <td>Volume</td>
-                    <td>{{ Volume }}</td>
-                </tr>
-                <tr>
-                    <td>Sector</td>
-                    <td>{{ Sector }}</td>
-                </tr>
-                <tr>
-                    <td>Industry</td>
-                    <td>{{ Industry }}</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+  <div>
+    <table class="info-table">
+      <tbody>
+        <tr>
+          <td>Symbol</td>
+          <td>{{ Symbol }}</td>
+        </tr>
+        <tr>
+          <td>Name</td>
+          <td>{{ Name }}</td>
+        </tr>
+        <tr>
+          <td>Net Change</td>
+          <td>{{ Net_Change }}</td>
+        </tr>
+        <tr>
+          <td>Percent Change</td>
+          <td>{{ Percent_Change }}</td>
+        </tr>
+        <tr>
+          <td>Market Cap</td>
+          <td>{{ Market_Cap }}</td>
+        </tr>
+        <tr>
+          <td>Country</td>
+          <td>{{ Country }}</td>
+        </tr>
+        <tr>
+          <td>IPO Year</td>
+          <td>{{ IPO_Year }}</td>
+        </tr>
+        <tr>
+          <td>Volume</td>
+          <td>{{ Volume }}</td>
+        </tr>
+        <tr>
+          <td>Sector</td>
+          <td>{{ Sector }}</td>
+        </tr>
+        <tr>
+          <td>Industry</td>
+          <td>{{ Industry }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 
-<div class="card" style="margin-top: 18px;">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h3 style="margin:0;">News Sentiment</h3>
-        <span style="
+<div class="card" style="margin-top: 18px">
+  <div
+    style="display: flex; justify-content: space-between; align-items: center"
+  >
+    <h3 style="margin: 0">News Sentiment</h3>
+    <span
+      style="
             padding: 6px 14px;
             border-radius: 20px;
             font-weight: 700;
             font-size: 14px;
             background: {% if sentiment.label == 'Positive' %}rgba(39,174,96,0.15){% elif sentiment.label == 'Negative' %}rgba(255,59,59,0.15){% else %}rgba(169,176,192,0.15){% endif %};
             color: {% if sentiment.label == 'Positive' %}#27ae60{% elif sentiment.label == 'Negative' %}#ff3b3b{% else %}#a9b0c0{% endif %};
-        ">
-            {{ sentiment.label }}
-        </span>
-    </div>
+        "
+    >
+      {{ sentiment.label }}
+    </span>
+  </div>
 
-    <p class="muted" style="margin: 6px 0 12px; font-size: 13px;">
-        Based on recent news headlines. Score: <strong>{{ sentiment.score }}</strong>
-    </p>
+  <p class="muted" style="margin: 6px 0 12px; font-size: 13px">
+    Based on recent news headlines. Score:
+    <strong>{{ sentiment.score }}</strong>
+  </p>
 
-    {% if sentiment.headlines %}
-    <ul style="margin:0; padding-left: 18px;">
-        {% for headline in sentiment.headlines %}
-        <li style="margin-bottom: 6px; color: var(--text); font-size: 14px;">{{ headline }}</li>
-        {% endfor %}
-    </ul>
-    {% else %}
-    <p class="muted">No recent headlines found.</p>
-    {% endif %}
+  {% if sentiment.headlines %}
+  <ul style="margin: 0; padding-left: 18px">
+    {% for headline in sentiment.headlines %}
+    <li style="margin-bottom: 6px; font-size: 14px">
+      <a
+        href="{{ headline.url }}"
+        target="_blank"
+        style="color: var(--text); text-decoration: none"
+        onmouseover="this.style.color = 'var(--accent)'"
+        onmouseout="this.style.color = 'var(--text)'"
+      >
+        {{ headline.title }}
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="muted">No recent headlines found.</p>
+  {% endif %}
 </div>
 
 <div class="card">
-    <div style="display:flex; justify-content:space-between; align-items:flex-start;" >
-        <h3 style = "margin:0; ">Prediction Reliability</h3>
-        <div>
-            <h3 style="margin:0 0 6px;"><u>How to use this Score</u></h3>
-        </div>
+  <div
+    style="
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    "
+  >
+    <h3 style="margin: 0">Prediction Reliability</h3>
+    <div>
+      <h3 style="margin: 0 0 6px"><u>How to use this Score</u></h3>
     </div>
+  </div>
 
-    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-        <p>Reliability: <strong>{{ relability }}</strong> </p>
-        <p><b>High:</b> Prediction is accurate to recent trends</p>
-    </div>
-    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-       <p class="muted">Based on last 60 trading days</p>
-        <p><b>Medium:</b> Prediction is moderatly reliable</p>
-    </div>
-    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-       <p>RMSE: <strong>{{ rmse }}</strong></p>
-        <p><b>Low:</b> High volatility -- Prediction is uncertain</p>
-    </div>
+  <div
+    style="
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    "
+  >
+    <p>Reliability: <strong>{{ relability }}</strong></p>
+    <p><b>High:</b> Prediction is accurate to recent trends</p>
+  </div>
+  <div
+    style="
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    "
+  >
+    <p class="muted">Based on last 60 trading days</p>
+    <p><b>Medium:</b> Prediction is moderatly reliable</p>
+  </div>
+  <div
+    style="
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    "
+  >
+    <p>RMSE: <strong>{{ rmse }}</strong></p>
+    <p><b>Low:</b> High volatility -- Prediction is uncertain</p>
+  </div>
   <p>MAPE: <strong>{{ mape }}%</strong></p>
 </div>
 
-
 <div class="grid-2">
-    <div class="card">
-        <h3>Live Price</h3>
-        <div class="plot">
-          {{ plot_div|safe }}
-        </div>
-    </div>
+  <div class="card">
+    <h3>Live Price</h3>
+    <div class="plot">{{ plot_div|safe }}</div>
+  </div>
 
-    <div class="card">
-        <h3>Prediction</h3>
-        <div class="plot">
-          {{ plot_div_pred|safe }}
-        </div>
-    </div>
+  <div class="card">
+    <h3>Prediction</h3>
+    <div class="plot">{{ plot_div_pred|safe }}</div>
+  </div>
 </div>
 
 {% if pf %}
-<div class="card" style="margin-top: 18px;">
-    <h3 style="margin:0 0 4px;">LSTM + Prophet Combined Forecast</h3>
-    <p class="muted" style="margin: 0 0 10px; font-size: 13px;">
-        LSTM (short-term momentum) vs Prophet (long-term trend). 
-        Divergence between the two lines reflects uncertainty — 
-        the shaded area shows Prophet's confidence range.
-    </p>
-    <div id="prophet-chart" style="width:100%; height:380px;"></div>
+<div class="card" style="margin-top: 18px">
+  <h3 style="margin: 0 0 4px">LSTM + Prophet Combined Forecast</h3>
+  <p class="muted" style="margin: 0 0 10px; font-size: 13px">
+    LSTM (short-term momentum) vs Prophet (long-term trend). Divergence between
+    the two lines reflects uncertainty — the shaded area shows Prophet's
+    confidence range.
+  </p>
+  <div id="prophet-chart" style="width: 100%; height: 380px"></div>
 </div>
-{% endif %}
-
-{% if plot_div_backtest %}
-<div class="card" style="margin-top: 18px;">
-    <h3>Backtest — Predicted vs Actual (Last 60 Trading Days)</h3>
-    <p class="muted" style="margin-top:4px;">
-        The model was given only data up to 60 trading days ago, then asked to forecast forward.
-        This shows how closely its predictions tracked reality.
-    </p>
-    <div class="plot">{{ plot_div_backtest|safe }}</div>
+{% endif %} {% if plot_div_backtest %}
+<div class="card" style="margin-top: 18px">
+  <h3>Backtest — Predicted vs Actual (Last 60 Trading Days)</h3>
+  <p class="muted" style="margin-top: 4px">
+    The model was given only data up to 60 trading days ago, then asked to
+    forecast forward. This shows how closely its predictions tracked reality.
+  </p>
+  <div class="plot">{{ plot_div_backtest|safe }}</div>
 </div>
-{% endif %}
-
-{% if pf %}
+{% endif %} {% if pf %}
 <script>
-const pfData = {{ pf|safe }};
-const lstmValues = {{ forecast|safe }};
+  const pfData = {{ pf|safe }};
+  const lstmValues = {{ forecast|safe }};
 
-const trace_upper = {
-    x: pfData.dates, y: pfData.upper,
-    fill: null, mode: 'lines',
-    line: {color: 'transparent'},
-    showlegend: false, hoverinfo: 'skip', name: 'upper'
-};
-const trace_lower = {
-    x: pfData.dates, y: pfData.lower,
-    fill: 'tonexty',
-    fillcolor: 'rgba(245,158,11,0.12)',
-    mode: 'lines',
-    line: {color: 'transparent'},
-    showlegend: false, hoverinfo: 'skip', name: 'lower'
-};
-const trace_prophet = {
-    x: pfData.dates, y: pfData.values,
-    mode: 'lines',
-    name: 'Prophet (trend)',
-    line: {color: '#f59e0b', dash: 'dash', width: 2}
-};
-const trace_lstm = {
-    x: pfData.dates, y: lstmValues,
-    mode: 'lines',
-    name: 'LSTM',
-    line: {color: '#6366f1', width: 2.5}
-};
+  const trace_upper = {
+      x: pfData.dates, y: pfData.upper,
+      fill: null, mode: 'lines',
+      line: {color: 'transparent'},
+      showlegend: false, hoverinfo: 'skip', name: 'upper'
+  };
+  const trace_lower = {
+      x: pfData.dates, y: pfData.lower,
+      fill: 'tonexty',
+      fillcolor: 'rgba(245,158,11,0.12)',
+      mode: 'lines',
+      line: {color: 'transparent'},
+      showlegend: false, hoverinfo: 'skip', name: 'lower'
+  };
+  const trace_prophet = {
+      x: pfData.dates, y: pfData.values,
+      mode: 'lines',
+      name: 'Prophet (trend)',
+      line: {color: '#f59e0b', dash: 'dash', width: 2}
+  };
+  const trace_lstm = {
+      x: pfData.dates, y: lstmValues,
+      mode: 'lines',
+      name: 'LSTM',
+      line: {color: '#6366f1', width: 2.5}
+  };
 
-Plotly.newPlot('prophet-chart',
-    [trace_upper, trace_lower, trace_prophet, trace_lstm],
-    {
-        paper_bgcolor: '#14151b',
-        plot_bgcolor: '#14151b',
-        font: {color: 'white'},
-        legend: {bgcolor: 'rgba(0,0,0,0)'},
-        yaxis: {title: 'Price (USD)'},
-        margin: {t: 10}
-    },
-    {responsive: true}
-);
+  Plotly.newPlot('prophet-chart',
+      [trace_upper, trace_lower, trace_prophet, trace_lstm],
+      {
+          paper_bgcolor: '#14151b',
+          plot_bgcolor: '#14151b',
+          font: {color: 'white'},
+          legend: {bgcolor: 'rgba(0,0,0,0)'},
+          yaxis: {title: 'Price (USD)'},
+          margin: {t: 10}
+      },
+      {responsive: true}
+  );
 </script>
-{% endif %}
-
-{% endblock %}
+{% endif %} {% endblock %}
