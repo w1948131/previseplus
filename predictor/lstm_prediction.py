@@ -141,6 +141,10 @@ def _forecast_from_window(model, scaler, window_scaled: np.ndarray, days: int):
     dummy[:, 0] = all_predictions_scaled
     all_predictions_real = scaler.inverse_transform(dummy)[:, 0]
     
+    current_price = scaler.inverse_transform(window_scaled[-1:])[0][0]
+    offset = current_price - all_predictions_real[0]
+    all_predictions_real = all_predictions_real + offset
+    
     return [round(float(v), 2) for v in all_predictions_real[:days]]
 
     

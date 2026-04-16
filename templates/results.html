@@ -178,9 +178,9 @@
 </div>
 {% endif %} {% if plot_div_backtest %}
 <div class="card" style="margin-top: 18px">
-  <h3>Backtest — Predicted vs Actual (Last 60 Trading Days)</h3>
+  <h3>Backtest — Predicted vs Actual (Last 30 Trading Days)</h3>
   <p class="muted" style="margin-top: 4px">
-    The model was given only data up to 60 trading days ago, then asked to
+    The model was given only data up to 30 trading days ago, then asked to
     forecast forward. This shows how closely its predictions tracked reality.
   </p>
   <div class="plot">{{ plot_div_backtest|safe }}</div>
