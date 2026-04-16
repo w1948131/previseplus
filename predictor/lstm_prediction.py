@@ -82,7 +82,7 @@ def _build_model(n_features: int):
     model = Sequential([
         LSTM(128, return_sequences=True, input_shape=(LOOKBACK, n_features)),  # LSTM layer identifies patterns
         LSTM(128),  # refines features
-        Dense(1)   # output layer predicts next close price
+        Dense(365)  # outputs full year at once 
     ])
     model.compile(optimizer="adam", loss="mse")
     return model
@@ -91,11 +91,11 @@ def _build_model(n_features: int):
 # Creates sliding-window sequences for LSTM training
 def _make_windows(series_scaled: np.ndarray):
     X, y = [], []
-    for i in range(LOOKBACK, len(series_scaled)):
+    for i in range(LOOKBACK, len(series_scaled) - 365):
         X.append(series_scaled[i - LOOKBACK:i])   # past LOOKBACK days of all features
-        y.append(series_scaled[i, 0])              # predict close prices 
-    X = np.array(X)                                # shape (N, LOOKBACK, n_features)
-    y = np.array(y).reshape(-1, 1)
+        y.append(series_scaled[i:i + 365, 0])     # 365days of close prices 
+    X = np.array(X)                               # shape (N, LOOKBACK, n_features)
+    y = np.array(y)
     return X, y
 
 
@@ -134,27 +134,35 @@ def _forecast_from_window(model, scaler, window_scaled: np.ndarray, days: int):
     n_features = window_scaled.shape[1]
     window = window_scaled[-LOOKBACK:].reshape(1, LOOKBACK, n_features)
 
-    future_scaled = []
-    last_row = window_scaled[-1].copy()  # holds last known values of all features
+    ##future_scaled = []
+    #last_row = window_scaled[-1].copy()  # holds last known values of all features
+    
+    all_predictions_scaled = model.predict(window, verbose=0)[0]
+    
+    dummy = np.zeros((365, n_features))
+    dummy[:, 0] = all_predictions_scaled
+    all_predictions_real = scaler.inverse_transform(dummy)[:, 0]
+    
+    return [round(float(v), 2) for v in all_predictions_real[:days]]
 
-    for _ in range(days):
-        next_close_scaled = model.predict(window, verbose=0)[0][0]  # predict next close
+    #for _ in range(days):
+    #   next_close_scaled = model.predict(window, verbose=0)[0][0]  # predict next close
 
         # build next row: update close price, keep other features at last known values
-        next_row = last_row.copy()
-        next_row[0] = next_close_scaled  # index 0 is Close
-        future_scaled.append(next_row)
-        last_row = next_row
+        #next_row = last_row.copy()
+        #next_row[0] = next_close_scaled  # index 0 is Close
+        #future_scaled.append(next_row)
+        #last_row = next_row
 
         # slide window forward
-        window = np.append(window[0, 1:, :], [next_row], axis=0).reshape(1, LOOKBACK, n_features)
+        #window = np.append(window[0, 1:, :], [next_row], axis=0).reshape(1, LOOKBACK, n_features)
 
     # inverse transform to get real prices
-    future_arr = np.array(future_scaled)
-    future_full = scaler.inverse_transform(future_arr)
-    future_close = future_full[:, 0]
+   # future_arr = np.array(future_scaled)
+   # future_full = scaler.inverse_transform(future_arr)
+   # future_close = future_full[:, 0]
 
-    return [round(float(v), 2) for v in future_close]
+   # return [round(float(v), 2) for v in future_close]
 
 
 # predicts future closing prices from today
