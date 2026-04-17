@@ -6,16 +6,65 @@
     <p class="muted">Active Stocks</p>
   </div>
 
-  <div class="card">
-    <h2 class="h1">Monthly Active Stocks</h2>
+  <div class="card" style="margin-top: 18px;">
+    <h3 style="margin:0 0 14px;">Market Buzz</h3>
+    <table class="info-table">
+        <thead>
+            <tr>
+                <td><strong>Symbol</strong></td>
+                <td><strong>Price</strong></td>
+                <td><strong>Change</strong></td>
+                <td><strong>Market Cap</strong></td>
+                <td><strong>Sentiment</strong></td>
+            </tr>
+        </thead>
+        <tbody id="buzz-table"></tbody>
+    </table>
+  </div>
 
+  <div class="card" style="margin-top: 18px;">
+    <h2 class="h1">Monthly Active Stocks</h2>
     <div class="plot">
       {% if plot_div_left %}
-
         {{ plot_div_left|safe }}
       {% else %}
         <p class="muted">Market data is unable to load</p>
       {% endif %}
     </div>
   </div>
+
+<script>
+const bubbleData = {{ bubble_data|safe }};
+
+function color(label) {
+    if (label === 'Positive') return '#27ae60';
+    if (label === 'Negative') return '#ff3b3b';
+    return '#a9b0c0';
+}
+
+const tbody = document.getElementById('buzz-table');
+bubbleData.forEach(d => {
+    const mcap = d.market_cap >= 1e12
+        ? '$' + (d.market_cap / 1e12).toFixed(2) + 'T'
+        : '$' + (d.market_cap / 1e9).toFixed(2) + 'B';
+
+    const changeColor = d.change_pct >= 0 ? '#27ae60' : '#ff3b3b';
+    const changeText = (d.change_pct >= 0 ? '+' : '') + d.change_pct.toFixed(2) + '%';
+
+    const row = `<tr style="cursor:pointer;" onclick="window.location.href='/predict/${d.ticker}/30/'">
+        <td><strong>${d.ticker}</strong></td>
+        <td>$${d.price.toFixed(2)}</td>
+        <td style="color:${changeColor};">${changeText}</td>
+        <td>${mcap}</td>
+        <td>
+            <span style="display:flex; align-items:center; gap:6px;">
+                <span style="width:10px; height:10px; border-radius:50%; background:${color(d.label)}; display:inline-block;"></span>
+                ${d.label}
+            </span>
+        </td>
+    </tr>`;
+    tbody.innerHTML += row;
+});
+</script>
+
 {% endblock %}

@@ -51,57 +51,76 @@ def search(request):
 
 @login_required
 def dashboard(request):
-    try: 
-        # pull stock info from yfinance,  Future goal: pull most popular instead
+    tickers = ["AAPL", "AMZN", "NVDA", "META", "MSFT", "JPM"]
+    
+    # fetch price data
+    try:
         data = yf.download(
-            tickers = ["AAPL", "AMZN", "NVDA", "META", "MSFT", "JPM"],
-        
+            tickers=tickers,
             group_by="ticker",
             period="1mo",
             interval="1d",
             threads=True,
             timeout=30
         )
-
         data.reset_index(level=0, inplace=True)
 
         fig_left = go.Figure()
-        fig_left.add_trace(
-            go.Scatter(x=data['Date'], y=data['AAPL']['Close'], name ="AAPL")
-        )
-        fig_left.add_trace(
-            go.Scatter(x=data['Date'], y=data['AMZN']['Close'], name ="AMZN")
-        )
-        fig_left.add_trace(
-            go.Scatter(x=data['Date'], y=data['NVDA']['Close'], name ="NVDA")
-        )
-        fig_left.add_trace(
-            go.Scatter(x=data['Date'], y=data['META']['Close'], name ="META")
-        )
-        fig_left.add_trace(
-            go.Scatter(x=data['Date'], y=data['MSFT']['Close'], name ="MSFT")
-        )
-        fig_left.add_trace(
-            go.Scatter(x=data['Date'], y=data['JPM']['Close'], name ="JPM")
-        )
-    
+        for sym in tickers:
+            fig_left.add_trace(go.Scatter(x=data['Date'], y=data[sym]['Close'], name=sym))
+
         #dashboard plot style
         fig_left.update_layout(
-            title = "Monthly Active Stocks",
+            title="Monthly Active Stocks",
             paper_bgcolor="#14151b",
             plot_bgcolor="#14151b",
             font_color="white"
         )
-    
+
         #plot to html
         plot_div_left = plot(fig_left, auto_open=False, output_type="div", include_plotlyjs="cdn")
-        
+
     except Exception:
         plot_div_left = None
-    
+
+    # fetch sentiment and volume for bubble chart
+    bubble_data = []
+    for sym in tickers:
+        try:
+            info = yf.Ticker(sym).fast_info
+            volume = int(info.three_month_average_volume or 1000000)
+            price = round(float(info.last_price or 0), 2)
+            prev_close = round(float(info.previous_close or 0), 2)
+            change_pct = round(((price - prev_close) / prev_close) * 100, 2) if prev_close else 0
+            market_cap = int(info.market_cap or 0)
+        except Exception:
+            volume = 1000000
+            price = 0
+            change_pct = 0
+            market_cap = 0
+
+        try:
+            sent = get_sentiment(sym, sym)
+            score = sent["score"] if sent["score"] != "N/A" else 0
+            label = sent["label"] if sent["label"] != "N/A" else "Neutral"
+        except Exception:
+            score = 0
+            label = "Neutral"
+
+        bubble_data.append({
+            "ticker": sym,
+            "volume": volume,
+            "score":  score,
+            "label":  label,
+            "price": price,
+            "change_pct": change_pct,
+            "market_cap": market_cap,
+            
+        })
+
     return render(request, "dashboard.html", {
         "plot_div_left": plot_div_left,
-        
+        "bubble_data":   json.dumps(bubble_data),
     })
 
 # renders list of tickers
